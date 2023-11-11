@@ -1,9 +1,10 @@
+import os
 from typing import Any, Dict
 
 import yaml
+from openai import OpenAI
 from termcolor import colored
 
-from yival.common.model_utils import llm_completion
 from yival.schemas.combination_enhancer_configs import OptimizeByPromptEnhancerConfig
 from yival.schemas.data_generator_configs import OpenAIPromptBasedGeneratorConfig
 from yival.schemas.dataset_config import DatasetConfig

@@ -296,6 +296,14 @@ def create_dash_app(
     interactive_mode
 ):
 
+    def wrapped_parallel_task(*args, **kwargs):
+        try:
+            print(f"Running parallel task with args: {args}, kwargs: {kwargs}")
+            return parallel_task(*args, **kwargs)
+        except Exception as e:
+            print(f"Exception in parallel task: {e}")
+            return None  # or some other default value
+
     def parallel_task(data_point, all_combinations, logger, evaluator):
         """Task to be run in parallel for processing data points."""
         RateLimiter(60 / 60)()  # Ensure rate limit
@@ -863,7 +871,7 @@ def create_dash_app(
             [
                 html.Tr([
                     DangerouslySetInnerHTML(
-                        f'<details><summary>{row[col][:250]}...</summary>{row[col]}</details>'
+                        f'<details><summary>{str(row[col])[:250]}...</summary>{str(row[col])}</details>'
                     ) if col_index == 0 else html.Td(row[col])
                     for col_index, col in enumerate(df.columns)
                 ]) for index, row in df.iterrows()
@@ -1949,12 +1957,13 @@ def create_dash_app(
             content=content, expected_result=expected_result
         )
         results: List[ExperimentResult] = []
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             for res in executor.map(
-                parallel_task, [input_data], [selected_combinations], [logger],
-                [evaluator]
+                wrapped_parallel_task, [input_data], [selected_combinations],
+                [logger], [evaluator]
             ):
-                results.extend(res)
+                if res is not None:
+                    results.extend(res)
 
         if interactive_mode:
             ress = []
